@@ -10,6 +10,8 @@ terraform {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 locals {
   name_prefix = "${var.project_name}-${var.env}"
 }
@@ -42,7 +44,11 @@ module "eks" {
 
   cluster_name    = "${local.name_prefix}-eks"
   cluster_version = "1.30"
-
+  cluster_endpoint_private_access = true     # VPC 내부에서도 접근 가능
+  cluster_endpoint_public_access  = true     # 외부에서도 접근 허용
+  cluster_endpoint_public_access_cidrs = [
+    "0.0.0.0/0"
+  ]
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
@@ -56,12 +62,14 @@ module "eks" {
   }
 
   enable_irsa = true
+  enable_cluster_creator_admin_permissions = true
 
   tags = {
     "Environment" = var.env
     "Project"     = var.project_name
   }
 }
+
 
 # 3. ALB를 위한 보안 그룹 (EKS 노드와 연동)
 resource "aws_security_group" "alb" {
@@ -106,6 +114,7 @@ module "rds" {
 
   engine            = "postgres"
   engine_version    = "15"
+  family            = "postgres15"
   instance_class    = "db.t3.medium"
   allocated_storage = 50
 
@@ -113,22 +122,24 @@ module "rds" {
   username = var.db_username
   password = var.db_password
 
-  multi_az               = false
-  publicly_accessible    = false
-  storage_encrypted      = true
-  deletion_protection    = true
-  skip_final_snapshot    = false
+  multi_az                = false
+  publicly_accessible     = false
+  storage_encrypted       = true
+  deletion_protection     = true
+  skip_final_snapshot     = false
   backup_retention_period = 7
 
   vpc_security_group_ids = [aws_security_group.rds.id]
 
-  subnet_ids = module.vpc.private_subnets
+  create_db_subnet_group = true
+  subnet_ids             = module.vpc.private_subnets
 
   tags = {
     Environment = var.env
     Project     = var.project_name
   }
 }
+
 
 resource "aws_security_group" "rds" {
   name        = "${local.name_prefix}-rds-sg"
@@ -159,18 +170,20 @@ resource "aws_security_group" "rds" {
 # 5. ElastiCache Redis
 module "redis" {
   source  = "terraform-aws-modules/elasticache/aws"
-  version = "~> 6.0"
+  version = "~> 1.0"
 
-  engine               = "redis"
-  engine_version       = "7.1"
-  node_type            = "cache.t3.small"
-  num_cache_nodes      = 1
+  replication_group_id = "${var.project_name}-${var.env}-redis"
+
+  engine                     = "redis"
+  engine_version             = "7.1"
+  node_type                  = "cache.t3.small"
+  num_cache_nodes            = 1
   transit_encryption_enabled = true
   at_rest_encryption_enabled = true
 
-  vpc_id                 = module.vpc.vpc_id
-  subnet_ids             = module.vpc.private_subnets
-  security_group_ids     = [aws_security_group.redis.id]
+  vpc_id             = module.vpc.vpc_id
+  subnet_ids         = module.vpc.private_subnets
+  security_group_ids = [aws_security_group.redis.id]
   automatic_failover_enabled = false
 
   tags = {
@@ -281,5 +294,6 @@ output "rds_endpoint" {
 }
 
 output "redis_endpoint" {
-  value = module.redis.primary_endpoint_address
+  description = "Primary endpoint address of the Redis replication group"
+  value       = module.redis.replication_group_primary_endpoint_address
 }

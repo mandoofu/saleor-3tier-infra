@@ -1,0 +1,28 @@
+# Terraform local dirs
+.terraform/
+.terraform.tfstate.lock.info
+
+# Terraform state files (민감정보 → 절대 커밋 X)
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Local overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config
+.terraformrc
+terraform.rc
+
+# OS / Editor
+*.log
+.vscode/
+.idea/
+.DS_Store
+
+envs/dev/terraform.tfvars
+envs/prod/terraform.tfvars

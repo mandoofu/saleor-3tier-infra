@@ -105,6 +105,7 @@ module "rds" {
 
   engine            = "postgres"
   engine_version    = "15"
+  family            = "postgres15"
   instance_class    = "db.t3.medium"  # ✅ 필요하면 m5.large 등으로 조정 가능
   allocated_storage = 100             # ✅ dev보다 여유
 
@@ -158,25 +159,32 @@ resource "aws_security_group" "rds" {
 # 5. ElastiCache Redis
 module "redis" {
   source  = "terraform-aws-modules/elasticache/aws"
-  version = "~> 6.0"
+  version = "~> 1.0"
 
-  engine               = "redis"
-  engine_version       = "7.1"
-  node_type            = "cache.t3.small"
-  num_cache_nodes      = 1
-  transit_encryption_enabled   = true
-  at_rest_encryption_enabled   = true
+  # 환경별 고유한 replication group ID
+  replication_group_id = "${var.project_name}-${var.env}-redis"
 
+  engine                      = "redis"
+  engine_version              = "7.1"
+  node_type                   = "cache.t3.small"
+  num_cache_nodes             = 1
+  transit_encryption_enabled  = true
+  at_rest_encryption_enabled  = true
+
+  # 네트워크 설정
   vpc_id                 = module.vpc.vpc_id
   subnet_ids             = module.vpc.private_subnets
   security_group_ids     = [aws_security_group.redis.id]
-  automatic_failover_enabled = false   # ✅ 비용/요구사항에 맞게 true로 바꿀 수 있음
+
+  # Failover 옵션 (prod에서는 true 고려 가능)
+  automatic_failover_enabled = false
 
   tags = {
     Environment = var.env
     Project     = var.project_name
   }
 }
+
 
 resource "aws_security_group" "redis" {
   name        = "${local.name_prefix}-redis-sg"
@@ -278,7 +286,7 @@ output "eks_cluster_ca_certificate" {
 output "rds_endpoint" {
   value = module.rds.db_instance_endpoint
 }
-
 output "redis_endpoint" {
-  value = module.redis.primary_endpoint_address
+  description = "Primary endpoint address of the Redis replication group"
+  value       = module.redis.replication_group_primary_endpoint_address
 }
