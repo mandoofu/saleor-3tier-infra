@@ -32,6 +32,15 @@ module "vpc" {
     "Environment" = var.env
     "Project"     = var.project_name
   }
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${local.name_prefix}-eks" = "shared"
+    "kubernetes.io/role/elb"                         = "1"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${local.name_prefix}-eks" = "shared"
+    "kubernetes.io/role/internal-elb"                = "1"
+  }
 }
 
 # 2. EKS
