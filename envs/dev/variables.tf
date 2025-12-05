@@ -16,6 +16,12 @@ variable "env" {
   default     = "dev"
 }
 
+variable "eks_public_access_cidrs" {
+  description = "EKS API public endpoint에 접근을 허용할 CIDR 목록 (운영에서는 회사 고정 IP만 허용 권장)"
+  type        = list(string)
+  default     = ["0.0.0.0/0"] # dev에서는 0.0.0.0/0 허용, prod에서만 좁히는 식으로 사용
+}
+
 variable "vpc_cidr" {
   type    = string
   default = "10.10.0.0/16"

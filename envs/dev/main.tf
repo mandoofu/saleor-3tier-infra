@@ -46,9 +46,8 @@ module "eks" {
   cluster_version = "1.30"
   cluster_endpoint_private_access = true     # VPC 내부에서도 접근 가능
   cluster_endpoint_public_access  = true     # 외부에서도 접근 허용
-  cluster_endpoint_public_access_cidrs = [
-    "0.0.0.0/0"
-  ]
+  cluster_endpoint_public_access_cidrs = var.eks_public_access_cidrs
+
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
