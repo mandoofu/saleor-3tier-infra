@@ -36,6 +36,10 @@ variable "private_subnets" {
   type    = list(string)
   default = ["10.10.11.0/24", "10.10.12.0/24"]
 }
+variable "db_name" {
+  type        = string
+  description = "Initial database name for Saleor"
+}
 
 variable "db_username" {
   type      = string
