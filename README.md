@@ -8,26 +8,6 @@ AWS 기반의 Production-Grade 3-Tier 아키텍처로 구성한 인프라 및 �
 애플리케이션 배포는 GitHub Actions → ECR → ArgoCD → EKS
 구조로 완전 자동화 되어 있습니다.
 
-🏗️ Architecture
-🔹 전체 구성도
-Client(Web/App)
-      │
-Route53 Domain
-      │
-Amazon ALB (Ingress, internet-facing)
- ┌───────────────┼────────────────┬────────────────┐
- │                │                │                │
-Storefront     Dashboard        API(Core)     /graphql route
-(Next.js)      (React admin)    (Saleor)  
- │                │                │
- └─────────── Kubernetes(EKS) ───────────┘
-                     │
-          ┌──────────┴──────────┐
-          │                     │
- Amazon RDS (PostgreSQL)   ElastiCache Redis
-          │                     │
-                Amazon S3 (media)
-
 
 🚀 Features
 ✔ 1. 완전 자동화된 AWS 인프라 (Terraform)
@@ -66,25 +46,3 @@ Storefront     Dashboard        API(Core)     /graphql route
 - EKS Managed NodeGroup
 - ALB Health Check
 - Autoscaling 고려
-
-📂 Repository Structure
-saleor-3tier-infra/
-└── terraform/
-    ├── bootstrap/
-    ├── envs/
-    │   ├── dev/
-    │   └── prod/
-    └── modules/
-        ├── vpc/
-        ├── eks/
-        ├── rds/
-        ├── redis/
-        ├── s3/
-        └── ecr/
-
-saleor-app-config/
-└── apps/
-    ├── saleor-core/
-    ├── saleor-storefront/
-    ├── saleor-dashboard/
-    └── ingress/
